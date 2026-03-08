@@ -1,5 +1,57 @@
 # Closed-Loop Robotic Arm Architecture
 
+```mermaid
+graph TD
+    subgraph "External Hardware"
+        ENC_HW[PWM Encoder GP29]
+        CMD_HW[Servo Input GP2]
+        MOT_HW[Motor/ESC GP4]
+    end
+
+    subgraph "Core 0 (Fast Path - 244Hz Sync)"
+        direction TB
+        E_ISR[Encoder ISR]
+        PID[PID Controller]
+        ACT[Direct HW PWM Write]
+        WD0[Heartbeat 0]
+        
+        ENC_HW --> E_ISR
+        E_ISR --> PID
+        PID --> ACT
+        ACT --> MOT_HW
+    end
+
+    subgraph "Shared Memory (Atomic Floats)"
+        S_TGT((shared_targetNorm))
+        S_CUR((shared_currentNorm))
+        S_OUT((shared_finalOutputUs))
+        S_AGE((shared_encoderAge))
+    end
+
+    subgraph "Core 1 (Interface & Supervisor)"
+        direction TB
+        S_MEAS[Servo Input Measure]
+        SER[Serial Command Parser]
+        TEL[Telemetry Streamer]
+        HWDG[Hardware Watchdog Feed]
+        WD1[Heartbeat 1]
+        
+        CMD_HW --> S_MEAS
+        SER --> TEL
+    end
+
+    %% Data Flow
+    S_MEAS -.-> S_TGT
+    S_TGT -.-> PID
+    E_ISR -.-> S_CUR
+    S_CUR -.-> TEL
+    ACT -.-> S_OUT
+    S_OUT -.-> TEL
+    WD0 -.-> HWDG
+    WD1 -.-> HWDG
+    HWDG -- "watchdog_update()" --> RPI_WDG[RP2040 Silicon Watchdog]
+```
+
 ## System Overview
 A high-performance, dual-core control system for a robotic arm joint using an RP2040-Zero. The system translates standard RC Servo PWM signals into precise angular positions using high-resolution encoder feedback.
 
