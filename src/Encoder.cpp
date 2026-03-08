@@ -13,11 +13,23 @@ void Encoder::begin() {
     _last_edge_time = micros();
     if (_pin == 2) {
         attachInterrupt(digitalPinToInterrupt(_pin), Encoder::_isr_wrapper_2, CHANGE);
+    } else if (_pin == 28) {
+        attachInterrupt(digitalPinToInterrupt(_pin), Encoder::_isr_wrapper_28, CHANGE);
+    } else if (_pin == 29) {
+        attachInterrupt(digitalPinToInterrupt(_pin), Encoder::_isr_wrapper_29, CHANGE);
     }
 }
 
 void Encoder::_isr_wrapper_2() {
     if (_instances[2]) _instances[2]->_handle_interrupt();
+}
+
+void Encoder::_isr_wrapper_28() {
+    if (_instances[28]) _instances[28]->_handle_interrupt();
+}
+
+void Encoder::_isr_wrapper_29() {
+    if (_instances[29]) _instances[29]->_handle_interrupt();
 }
 
 void Encoder::_handle_interrupt() {

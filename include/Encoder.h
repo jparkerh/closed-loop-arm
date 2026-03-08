@@ -40,6 +40,8 @@ private:
     double _filtered_continuous = 0.0;
 
     static void _isr_wrapper_2(); // Specifically for GP2
+    static void _isr_wrapper_28(); // Specifically for GP28
+    static void _isr_wrapper_29(); // Specifically for GP29
     void _handle_interrupt();
 };
 
