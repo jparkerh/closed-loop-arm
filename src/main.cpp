@@ -182,12 +182,13 @@ void loop1() {
     // 4. Telemetry (50ms)
     static uint32_t lastReportMs = 0;
     if (millis() - lastReportMs > 50) {
-        char buf[128];
+        char buf[160];
         snprintf(buf, sizeof(buf), 
-                 "T:%5.2f|C:%5.2f|E:%5.2f|O:%4lu|Age:%2lu,%2lu|%s", 
+                 "Target: %5.2f | Current: %5.2f | Effort: %5.2f | Out: %4lu us | Age(ms): [Cmd:%2lu, Enc:%2lu] | Gain: [P:%0.1f, I:%0.2f, D:%0.2f] | Status: %s", 
                  shared_targetNorm, shared_currentNorm, shared_effort, 
                  shared_finalOutputUs, shared_signalAge, shared_encoderAge,
-                 (!hasZeroed) ? "WARM" : (shared_systemEnabled ? "RUN" : "STOP"));
+                 shared_kp, shared_ki, shared_kd,
+                 (!hasZeroed) ? "WARMUP" : (shared_systemEnabled ? "RUNNING" : "STOPPED"));
         Serial.println(buf);
         lastReportMs = millis();
     }
