@@ -1,4 +1,5 @@
 #include "Encoder.h"
+#include <algorithm>
 
 Encoder* Encoder::_instances[30] = {nullptr};
 
@@ -48,6 +49,10 @@ void Encoder::_handle_interrupt() {
     }
 }
 
+// Internal State for Quadrant Tracking
+static int _last_quadrant = -1;
+static long _total_turns = 0;
+
 bool Encoder::update() {
     if (!_data_ready) return false;
 
@@ -59,35 +64,48 @@ bool Encoder::update() {
     interrupts();
 
     uint32_t period = h + l;
-    if (period < 100) return false;
+    if (period < 100) {
+        _rejection_count++;
+        return false;
+    }
 
     _last_period = period;
     double raw = (double)h * 360.0 / (double)period;
     
+    // Determine current quadrant (0, 1, 2, or 3)
+    int current_quadrant = (int)(raw / 90.0);
+    if (current_quadrant > 3) current_quadrant = 3;
+
     if (!_initialized) {
         _last_raw = raw;
-        _total_accumulated = raw;
-        _start_offset = _total_accumulated;
+        _last_quadrant = current_quadrant;
+        _total_turns = 0;
+        _start_offset = raw;
         _filtered_continuous = 0.0;
         _initialized = true;
         return true;
     }
 
-    // 1. Unwrap against the LAST VALID sample
-    double delta = raw - _last_raw;
-    if (delta > 180.0) delta -= 360.0;
-    else if (delta < -180.0) delta += 360.0;
-
-    // 2. Velocity Cap Validation
-    if (abs(delta) > 150.0) {
-        return false; 
+    // --- Quadrant-Based Unwrapping ---
+    if (current_quadrant != _last_quadrant) {
+        // Check for wrap-around
+        if (_last_quadrant == 3 && current_quadrant == 0) {
+            _total_turns++; // Forward Wrap
+        } else if (_last_quadrant == 0 && current_quadrant == 3) {
+            _total_turns--; // Backward Wrap
+        } else if (abs(current_quadrant - _last_quadrant) > 1) {
+            // A jump of more than 1 quadrant (e.g. 0 to 2) is physically 
+            // impossible at this sample rate. It's noise.
+            _rejection_count++;
+            return false; 
+        }
+        _last_quadrant = current_quadrant;
     }
 
-    _total_accumulated += delta;
     _last_raw = raw;
+    double current_continuous = (_total_turns * 360.0) + raw - _start_offset;
 
-    // 3. One-Pole Low-Pass Filter on the continuous result
-    double current_continuous = _total_accumulated - _start_offset;
+    // One-Pole Smoothing
     _filtered_continuous = (_alpha * current_continuous) + ((1.0f - _alpha) * _filtered_continuous);
 
     return true;
