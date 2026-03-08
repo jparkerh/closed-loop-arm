@@ -5,31 +5,26 @@
 
 class PIDController {
 public:
-    PIDController(double kp, double ki, double kd);
+    PIDController(float kp, float ki, float kd);
     
-    // Setters for tuning
-    void setGains(double kp, double ki, double kd);
-    void setOutputLimits(double min, double max);
-    void setIntegralLimit(double limit);
+    void setGains(float kp, float ki, float kd);
+    void setOutputLimits(float min, float max);
+    void setIntegralLimit(float limit);
     
-    // Core calculation
-    double compute(double target, double current, double dt);
-    
-    // Reset internal state (integral and last error)
+    float compute(float target, float current, float dt);
     void reset();
 
-    // Getters for telemetry
-    double getKp() const { return _kp; }
-    double getKi() const { return _ki; }
-    double getKd() const { return _kd; }
+    float getKp() const { return _kp; }
+    float getKi() const { return _ki; }
+    float getKd() const { return _kd; }
 
 private:
-    double _kp, _ki, _kd;
-    double _min_output, _max_output;
-    double _integral_limit;
+    float _kp, _ki, _kd;
+    float _min_output, _max_output;
+    float _integral_limit;
     
-    double _integral = 0;
-    double _last_error = 0;
+    float _integral = 0;
+    float _last_error = 0;
     bool _first_run = true;
 };
 

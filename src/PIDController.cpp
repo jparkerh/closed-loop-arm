@@ -1,24 +1,24 @@
 #include "PIDController.h"
 
-PIDController::PIDController(double kp, double ki, double kd) 
+PIDController::PIDController(float kp, float ki, float kd) 
     : _kp(kp), _ki(ki), _kd(kd) {
-    _min_output = -1000.0;
-    _max_output = 1000.0;
-    _integral_limit = 500.0;
+    _min_output = -1.0f;
+    _max_output = 1.0f;
+    _integral_limit = 0.5f;
 }
 
-void PIDController::setGains(double kp, double ki, double kd) {
+void PIDController::setGains(float kp, float ki, float kd) {
     _kp = kp;
     _ki = ki;
     _kd = kd;
 }
 
-void PIDController::setOutputLimits(double min, double max) {
+void PIDController::setOutputLimits(float min, float max) {
     _min_output = min;
     _max_output = max;
 }
 
-void PIDController::setIntegralLimit(double limit) {
+void PIDController::setIntegralLimit(float limit) {
     _integral_limit = limit;
 }
 
@@ -28,28 +28,27 @@ void PIDController::reset() {
     _first_run = true;
 }
 
-double PIDController::compute(double target, double current, double dt) {
+float PIDController::compute(float target, float current, float dt) {
     if (dt <= 0) return 0;
     
-    double error = target - current;
+    float error = target - current;
 
     // Proportional
-    double p_out = _kp * error;
+    float p_out = _kp * error;
 
-    // Integral with anti-windup clamping
+    // Integral with anti-windup
     _integral += error * dt;
     _integral = constrain(_integral, -_integral_limit, _integral_limit);
-    double i_out = _ki * _integral;
+    float i_out = _ki * _integral;
 
     // Derivative
-    double d_out = 0;
+    float d_out = 0;
     if (!_first_run) {
         d_out = _kd * (error - _last_error) / dt;
     }
     _first_run = false;
     _last_error = error;
 
-    // Final output with total clamping
-    double output = p_out + i_out + d_out;
+    float output = p_out + i_out + d_out;
     return constrain(output, _min_output, _max_output);
 }

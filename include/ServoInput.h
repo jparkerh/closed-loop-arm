@@ -14,10 +14,14 @@ public:
     // Returns true if a new pulse has been processed since the last check
     bool hasNewData();
 
+    // Returns the time in ms since the last valid pulse
+    uint32_t getSignalAgeMs() const { return millis() - _last_pulse_time_ms; }
+
 private:
     int _pin;
     volatile uint32_t _pulse_start_us = 0;
     volatile uint32_t _last_pulse_width_us = 0;
+    volatile uint32_t _last_pulse_time_ms = 0;
     volatile bool _new_data = false;
 
     static ServoInput* _instances[30];

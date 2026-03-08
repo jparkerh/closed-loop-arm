@@ -27,6 +27,7 @@ void ServoInput::_handle_interrupt() {
             // Validate: check against standard servo signal range (500-2500us)
             if (width >= 400 && width <= 2600) {
                 _last_pulse_width_us = width;
+                _last_pulse_time_ms = millis();
                 _new_data = true;
             }
         }
