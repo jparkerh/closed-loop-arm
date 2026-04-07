@@ -34,6 +34,8 @@ void Encoder::_isr_wrapper_29() {
 
 void Encoder::resetZero() {
     _initialized = false;
+    _last_quadrant = -1;
+    _total_turns = 0;
 }
 
 void Encoder::_handle_interrupt() {
@@ -42,16 +44,14 @@ void Encoder::_handle_interrupt() {
     _last_edge_time = now;
 
     if (gpio_get(_pin)) {
+        // High: The duration was the LOW phase.
         _last_low_us = duration;
         _data_ready = true; 
     } else {
+        // Low: The duration was the HIGH phase.
         _last_high_us = duration;
     }
 }
-
-// Internal State for Quadrant Tracking
-static int _last_quadrant = -1;
-static long _total_turns = 0;
 
 bool Encoder::update() {
     if (!_data_ready) return false;
@@ -64,7 +64,12 @@ bool Encoder::update() {
     interrupts();
 
     uint32_t period = h + l;
-    if (period < 100) {
+    
+    if (period < 500 || period > 2500) {
+        if (_rejection_count % 100 == 0) {
+            Serial.print("Rejected Period: ");
+            Serial.println(period);
+        }
         _rejection_count++;
         return false;
     }
@@ -72,7 +77,6 @@ bool Encoder::update() {
     _last_period = period;
     double raw = (double)h * 360.0 / (double)period;
     
-    // Determine current quadrant (0, 1, 2, or 3)
     int current_quadrant = (int)(raw / 90.0);
     if (current_quadrant > 3) current_quadrant = 3;
 
@@ -88,14 +92,17 @@ bool Encoder::update() {
 
     // --- Quadrant-Based Unwrapping ---
     if (current_quadrant != _last_quadrant) {
-        // Check for wrap-around
         if (_last_quadrant == 3 && current_quadrant == 0) {
-            _total_turns++; // Forward Wrap
+            _total_turns++; 
         } else if (_last_quadrant == 0 && current_quadrant == 3) {
-            _total_turns--; // Backward Wrap
+            _total_turns--; 
         } else if (abs(current_quadrant - _last_quadrant) > 1) {
-            // A jump of more than 1 quadrant (e.g. 0 to 2) is physically 
-            // impossible at this sample rate. It's noise.
+            if (_rejection_count % 100 == 0) {
+                Serial.print("Rejected Jump: ");
+                Serial.print(_last_quadrant);
+                Serial.print(" -> ");
+                Serial.println(current_quadrant);
+            }
             _rejection_count++;
             return false; 
         }
@@ -105,7 +112,6 @@ bool Encoder::update() {
     _last_raw = raw;
     double current_continuous = (_total_turns * 360.0) + raw - _start_offset;
 
-    // One-Pole Smoothing
     _filtered_continuous = (_alpha * current_continuous) + ((1.0f - _alpha) * _filtered_continuous);
 
     return true;

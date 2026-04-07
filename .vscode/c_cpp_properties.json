@@ -10,6 +10,7 @@
             "includePath": [
                 "/home/jph/Projects/closed-loop-arm/include",
                 "/home/jph/Projects/closed-loop-arm/src",
+                "/home/jph/.platformio/packages/framework-arduinopico/libraries/Servo/src",
                 "/home/jph/.platformio/packages/framework-arduinopico/cores/rp2040",
                 "/home/jph/.platformio/packages/framework-arduinopico/cores/rp2040/api/deprecated",
                 "/home/jph/.platformio/packages/framework-arduinopico/cores/rp2040/api/deprecated-avr-comp",
@@ -138,7 +139,6 @@
                 "/home/jph/.platformio/packages/framework-arduinopico/libraries/SPISlave/src",
                 "/home/jph/.platformio/packages/framework-arduinopico/libraries/SdFat/src",
                 "/home/jph/.platformio/packages/framework-arduinopico/libraries/SerialBT/src",
-                "/home/jph/.platformio/packages/framework-arduinopico/libraries/Servo/src",
                 "/home/jph/.platformio/packages/framework-arduinopico/libraries/SimpleMDNS/src",
                 "/home/jph/.platformio/packages/framework-arduinopico/libraries/SingleFileDrive/src",
                 "/home/jph/.platformio/packages/framework-arduinopico/libraries/SoftwareSPI/src",
@@ -168,6 +168,7 @@
                 "path": [
                     "/home/jph/Projects/closed-loop-arm/include",
                     "/home/jph/Projects/closed-loop-arm/src",
+                    "/home/jph/.platformio/packages/framework-arduinopico/libraries/Servo/src",
                     "/home/jph/.platformio/packages/framework-arduinopico/cores/rp2040",
                     "/home/jph/.platformio/packages/framework-arduinopico/cores/rp2040/api/deprecated",
                     "/home/jph/.platformio/packages/framework-arduinopico/cores/rp2040/api/deprecated-avr-comp",
@@ -296,7 +297,6 @@
                     "/home/jph/.platformio/packages/framework-arduinopico/libraries/SPISlave/src",
                     "/home/jph/.platformio/packages/framework-arduinopico/libraries/SdFat/src",
                     "/home/jph/.platformio/packages/framework-arduinopico/libraries/SerialBT/src",
-                    "/home/jph/.platformio/packages/framework-arduinopico/libraries/Servo/src",
                     "/home/jph/.platformio/packages/framework-arduinopico/libraries/SimpleMDNS/src",
                     "/home/jph/.platformio/packages/framework-arduinopico/libraries/SingleFileDrive/src",
                     "/home/jph/.platformio/packages/framework-arduinopico/libraries/SoftwareSPI/src",

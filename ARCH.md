@@ -5,6 +5,9 @@ graph TD
     subgraph "External Hardware"
         ENC_HW[PWM Encoder GP29]
         CMD_HW[Servo Input GP2]
+        OVR_HW[Override GP3]
+        MAN_HW[Manual GP5]
+        LOG_HW[Datalogger GP0/GP1]
         MOT_HW[Motor/ESC GP4]
     end
 
@@ -96,4 +99,8 @@ A high-performance, dual-core control system for a robotic arm joint using an RP
 |---|---|---|
 | GP29 | Encoder Feedback | Input (PWM) |
 | GP2 | Stick Command | Input (Servo) |
+| GP3 | Override Switch | Input (Servo) |
+| GP5 | Manual Control | Input (Servo) |
 | GP4 | Motor Driver | Output (Hardware PWM) |
+| GP0 | Datalog TX (Serial0) | Output (UART) |
+| GP1 | Datalog RX (Serial0) | Input (UART) |

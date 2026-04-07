@@ -25,7 +25,12 @@ private:
     volatile bool _new_data = false;
 
     static ServoInput* _instances[30];
-    static void _isr_wrapper_2(); // Specifically for GP2
+    static void _isr_wrapper_0(); 
+    static void _isr_wrapper_1(); 
+    static void _isr_wrapper_2(); 
+    static void _isr_wrapper_3(); 
+    static void _isr_wrapper_4(); 
+    static void _isr_wrapper_5(); 
     void _handle_interrupt();
 };
 

@@ -8,13 +8,43 @@ ServoInput::ServoInput(int pin) : _pin(pin) {
 
 void ServoInput::begin() {
     pinMode(_pin, INPUT_PULLUP);
-    if (_pin == 2) {
+    if (_pin == 0) {
+        attachInterrupt(digitalPinToInterrupt(_pin), ServoInput::_isr_wrapper_0, CHANGE);
+    } else if (_pin == 1) {
+        attachInterrupt(digitalPinToInterrupt(_pin), ServoInput::_isr_wrapper_1, CHANGE);
+    } else if (_pin == 2) {
         attachInterrupt(digitalPinToInterrupt(_pin), ServoInput::_isr_wrapper_2, CHANGE);
+    } else if (_pin == 3) {
+        attachInterrupt(digitalPinToInterrupt(_pin), ServoInput::_isr_wrapper_3, CHANGE);
+    } else if (_pin == 4) {
+        attachInterrupt(digitalPinToInterrupt(_pin), ServoInput::_isr_wrapper_4, CHANGE);
+    } else if (_pin == 5) {
+        attachInterrupt(digitalPinToInterrupt(_pin), ServoInput::_isr_wrapper_5, CHANGE);
     }
+}
+
+void ServoInput::_isr_wrapper_0() {
+    if (_instances[0]) _instances[0]->_handle_interrupt();
+}
+
+void ServoInput::_isr_wrapper_1() {
+    if (_instances[1]) _instances[1]->_handle_interrupt();
 }
 
 void ServoInput::_isr_wrapper_2() {
     if (_instances[2]) _instances[2]->_handle_interrupt();
+}
+
+void ServoInput::_isr_wrapper_3() {
+    if (_instances[3]) _instances[3]->_handle_interrupt();
+}
+
+void ServoInput::_isr_wrapper_4() {
+    if (_instances[4]) _instances[4]->_handle_interrupt();
+}
+
+void ServoInput::_isr_wrapper_5() {
+    if (_instances[5]) _instances[5]->_handle_interrupt();
 }
 
 void ServoInput::_handle_interrupt() {

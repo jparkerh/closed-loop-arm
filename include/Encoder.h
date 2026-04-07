@@ -28,9 +28,9 @@ private:
     volatile uint32_t _last_edge_time = 0;
     volatile bool _data_ready = false;
 
-    // Median Filter for Raw Spikes
-    double _m_buffer[3] = {0, 0, 0};
-    int _m_idx = 0;
+    // Fixed: Turn tracking as member variables
+    int _last_quadrant = -1;
+    long _total_turns = 0;
 
     // Processing State
     double _last_raw = 0.0;
