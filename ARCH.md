@@ -15,7 +15,7 @@ graph TD
         direction TB
         E_ISR[Encoder ISR]
         PID[PID Controller]
-        ACT[Direct HW PWM Write]
+        ACT[Servo Library Write]
         WD0[Heartbeat 0]
         
         ENC_HW --> E_ISR
@@ -35,7 +35,7 @@ graph TD
         direction TB
         S_MEAS[Servo Input Measure]
         SER[Serial Command Parser]
-        TEL[Telemetry Streamer]
+        TEL[Telemetry Streamer (Serial1)]
         HWDG[Hardware Watchdog Feed]
         WD1[Heartbeat 1]
         
@@ -63,14 +63,14 @@ A high-performance, dual-core control system for a robotic arm joint using an RP
 ### Core 0 (The Master Controller)
 *   **Encoder Processing:** Direct interface with the 244Hz PWM encoder on GP29.
 *   **Synchronized Control Loop:** Executes the PID math exactly when a new encoder pulse arrives (minimizing phase lag).
-*   **Direct Actuation:** Writes to the Hardware PWM register for the motor (GP4) immediately after PID calculation for sub-millisecond response.
+*   **Actuation:** Uses the `Servo` library to update the motor (GP4) immediately after PID calculation.
 *   **Heartbeat:** Maintains `heartbeat0` for the hardware watchdog.
 
 ### Core 1 (The Gatekeeper & Interface)
-*   **Servo Input Measurement:** Measures the incoming 50Hz control pulse (500-2500µs) on GP2.
+*   **Servo Input Measurement:** Measures the incoming 50Hz control pulse (1000-2000µs) on GP2.
 *   **Hardware Watchdog Management:** Feeds the physical RP2040 watchdog timer (200ms) ONLY if both cores are reporting active heartbeats.
-*   **Command Parsing:** Interprets serial tuning commands (P, I, D, R, S, M).
-*   **Telemetry:** Formats and streams system state to Serial every 50ms.
+*   **Command Parsing:** Interprets serial tuning commands (P, I, D, R, S).
+*   **Telemetry:** Formats and streams system state to Serial (USB) and Serial1 (UART) every 50ms.
 *   **Safety Gate:** Monitors Core 0 health and provides a secondary shutdown of the motor if the master core fails.
 
 ## Control Logic
@@ -81,7 +81,7 @@ A high-performance, dual-core control system for a robotic arm joint using an RP
 
 ## Safety Features
 1.  **Hardware Watchdog:** 200ms full-chip reset if either core hangs.
-2.  **Encoder Loss Watchdog:** Motor neutralized if feedback signal is lost for >50ms.
+2.  **Encoder Loss Watchdog:** Motor neutralized if feedback signal is lost for >100ms.
 3.  **Command Loss Watchdog:** Target set to neutral if stick signal is lost for >200ms.
 4.  **Startup Stabilization:** 5-second "WARMUP" period to allow encoder stabilization before zeroing and enabling movement.
 
@@ -101,6 +101,6 @@ A high-performance, dual-core control system for a robotic arm joint using an RP
 | GP2 | Stick Command | Input (Servo) |
 | GP3 | Override Switch | Input (Servo) |
 | GP5 | Manual Control | Input (Servo) |
-| GP4 | Motor Driver | Output (Hardware PWM) |
-| GP0 | Datalog TX (Serial0) | Output (UART) |
-| GP1 | Datalog RX (Serial0) | Input (UART) |
+| GP4 | Motor Driver | Output (Servo PWM) |
+| GP0 | Datalog TX (Serial1) | Output (UART) |
+| GP1 | Datalog RX (Serial1) | Input (UART) |
