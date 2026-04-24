@@ -68,7 +68,7 @@ void loop() {
     static uint32_t currentPIDOutputUs = 1500;
     heartbeat0 = true;
 
-    // 1. PID Calculation
+    // 1. PID Calculation & Synchronous Actuation
     if (encoder.update()) {
         uint32_t now = millis();
         float dt = (float)(now - lastEncoderUpdate) / 1000.0f;
@@ -88,38 +88,37 @@ void loop() {
         currentPIDOutputUs = outUs;
         shared_currentNorm = currentNorm;
         shared_effort = effort;
+
+        // --- SYNCHRONOUS ACTUATION (Triggered by Encoder Update) ---
+        uint32_t finalOut = 1500;
+        static bool wasOverride = false;
+        bool isOverride = (shared_overrideUs > 1600);
+
+        if (isOverride) {
+            // MANUAL OVERRIDE: Pass-through
+            finalOut = shared_manualUs;
+            if (finalOut < 800 || finalOut > 2200) finalOut = 1500;
+            wasOverride = true;
+        } else {
+            // Transition Detection
+            if (wasOverride) {
+                encoder.resetZero();
+                pid.reset();
+                wasOverride = false;
+            }
+
+            if (shared_systemEnabled) {
+                finalOut = currentPIDOutputUs;
+            }
+        }
+        
+        float dutyCycle = ((float)finalOut / 2500.0f) * 100.0f;
+        motorPWM->setPWM(SERVO_OUT_PIN, PWM_FREQ, dutyCycle);
+        shared_finalOutputUs = finalOut;
     }
 
-    // 2. Consistent Servo Actuation
-    uint32_t finalOut = 1500;
-    uint32_t age = millis() - lastEncoderUpdate;
-    shared_encoderAge = age;
-
-    static bool wasOverride = false;
-    bool isOverride = (shared_overrideUs > 1600);
-
-    if (isOverride) {
-        // MANUAL OVERRIDE: Direct pass-through of manual stick
-        finalOut = shared_manualUs;
-        if (finalOut < 800 || finalOut > 2200) finalOut = 1500; // Failsafe clamp
-        wasOverride = true;
-    } else {
-        // Transition Detection: Just entered Auto mode from Manual
-        if (wasOverride) {
-            encoder.resetZero();
-            pid.reset();
-            wasOverride = false;
-        }
-
-        if (shared_systemEnabled && age < 100) {
-            // CLOSED LOOP: PID Control
-            finalOut = currentPIDOutputUs;
-        }
-    }
-    
-    float dutyCycle = ((float)finalOut / 2500.0f) * 100.0f;
-    motorPWM->setPWM(SERVO_OUT_PIN, PWM_FREQ, dutyCycle);
-    shared_finalOutputUs = finalOut;
+    // 2. Monitoring (Low priority updates)
+    shared_encoderAge = millis() - lastEncoderUpdate;
 }
 
 // ================================================================
@@ -172,23 +171,28 @@ void loop1() {
 
     processCommands();
 
-    servoIn.hasNewData();
-    uint32_t inputUs = servoIn.getPulseWidthUs();
-    shared_signalAge = servoIn.getSignalAgeMs();
-
-    overrideIn.hasNewData();
-    shared_overrideUs = overrideIn.getPulseWidthUs();
-
-    manualIn.hasNewData();
-    shared_manualUs = manualIn.getPulseWidthUs();
-    
-    if (shared_signalAge < 200) {
+    if (servoIn.hasNewData()) {
+        uint32_t inputUs = servoIn.getPulseWidthUs();
+        shared_signalAge = 0; // Reset age on fresh data
         shared_targetNorm = (float)(1500 - (int32_t)inputUs) / 1000.0f;
     } else {
+        shared_signalAge = servoIn.getSignalAgeMs();
+    }
+
+    if (overrideIn.hasNewData()) {
+        shared_overrideUs = overrideIn.getPulseWidthUs();
+    }
+
+    if (manualIn.hasNewData()) {
+        shared_manualUs = manualIn.getPulseWidthUs();
+    }
+    
+    // Safety: reset target if signal is lost
+    if (shared_signalAge > 200) {
         shared_targetNorm = 0; 
     }
 
-    if (!hasZeroed && millis() > 1000) {
+    if (!hasZeroed && millis() > 2000) {
         encoder.resetZero();
         shared_systemEnabled = true; 
         hasZeroed = true;
@@ -208,9 +212,9 @@ static uint32_t lastReportMs = 0;
 
         char buf[256];
         snprintf(buf, sizeof(buf), 
-                 "Tgt:%5.2f | Cur:%5.2f | Eff:%5.2f | Out:%4lu | Stk:%4lu | Ovr:%4lu | Man:%4lu | Age:[%3lu,%3lu] | Status:%s", 
+                 "Tgt:%5.2f | Cur:%5.2f | Eff:%5.2f | Out:%4lu | Ovr:%4lu | Man:%4lu | Age:[%3lu,%3lu] | Status:%s", 
                  shared_targetNorm, shared_currentNorm, shared_effort, 
-                 shared_finalOutputUs, inputUs, shared_overrideUs, shared_manualUs, 
+                 shared_finalOutputUs, shared_overrideUs, shared_manualUs, 
                  shared_signalAge, shared_encoderAge,
                  statusStr);
         Serial.println(buf);
