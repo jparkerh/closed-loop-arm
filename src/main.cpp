@@ -90,13 +90,26 @@ void loop() {
     uint32_t age = millis() - lastEncoderUpdate;
     shared_encoderAge = age;
 
-    if (shared_overrideUs > 1600) {
+    static bool wasOverride = false;
+    bool isOverride = (shared_overrideUs > 1600);
+
+    if (isOverride) {
         // MANUAL OVERRIDE: Direct pass-through of manual stick
         finalOut = shared_manualUs;
         if (finalOut < 800 || finalOut > 2200) finalOut = 1500; // Failsafe clamp
-    } else if (shared_systemEnabled && age < 100) {
-        // CLOSED LOOP: PID Control
-        finalOut = currentPIDOutputUs;
+        wasOverride = true;
+    } else {
+        // Transition Detection: Just entered Auto mode from Manual
+        if (wasOverride) {
+            encoder.resetZero();
+            pid.reset();
+            wasOverride = false;
+        }
+
+        if (shared_systemEnabled && age < 100) {
+            // CLOSED LOOP: PID Control
+            finalOut = currentPIDOutputUs;
+        }
     }
     
     motorOutput.writeMicroseconds(finalOut);
