@@ -1,5 +1,5 @@
 #include <Arduino.h>
-#include <Servo.h>
+#include "RP2040_PWM.h"
 #include <hardware/watchdog.h>
 #include "Encoder.h"
 #include "ServoInput.h"
@@ -11,6 +11,9 @@ const int SERVO_IN_PIN = 2;
 const int OVERRIDE_PIN = 3;
 const int MANUAL_PIN = 5;
 const int SERVO_OUT_PIN = 4;
+
+// PWM Configuration (400Hz for high-speed ESC/Servo)
+const float PWM_FREQ = 400.0f;
 
 // UART Configuration (GP0=TX, GP1=RX)
 #define UART_TX_PIN 0
@@ -41,7 +44,9 @@ ServoInput servoIn(SERVO_IN_PIN);
 ServoInput overrideIn(OVERRIDE_PIN);
 ServoInput manualIn(MANUAL_PIN);
 PIDController pid(0, 0, 0); 
-Servo motorOutput; // Using the Servo library
+
+// Hardware PWM Instance
+RP2040_PWM* motorPWM;
 
 bool hasZeroed = false;
 
@@ -52,9 +57,9 @@ void setup() {
     pinMode(LED_BUILTIN, OUTPUT);
     encoder.begin();
     
-    // Core 0 Exclusive owner of the Servo
-    motorOutput.attach(SERVO_OUT_PIN, 1000, 2000);
-    motorOutput.writeMicroseconds(1500);
+    // Core 0 Exclusive owner of the PWM
+    motorPWM = new RP2040_PWM(SERVO_OUT_PIN, PWM_FREQ, 0);
+    motorPWM->setPWM(SERVO_OUT_PIN, PWM_FREQ, 60.0f); // 1500us neutral at 400Hz (period=2500us)
 }
 
 void loop() {
@@ -112,7 +117,8 @@ void loop() {
         }
     }
     
-    motorOutput.writeMicroseconds(finalOut);
+    float dutyCycle = ((float)finalOut / 2500.0f) * 100.0f;
+    motorPWM->setPWM(SERVO_OUT_PIN, PWM_FREQ, dutyCycle);
     shared_finalOutputUs = finalOut;
 }
 
