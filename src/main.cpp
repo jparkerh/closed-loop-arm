@@ -182,7 +182,7 @@ void loop1() {
         shared_targetNorm = 0; 
     }
 
-    if (!hasZeroed && millis() > 5000) {
+    if (!hasZeroed && millis() > 1000) {
         encoder.resetZero();
         shared_systemEnabled = true; 
         hasZeroed = true;
