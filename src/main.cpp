@@ -47,6 +47,7 @@ PIDController pid(0, 0, 0);
 
 // Hardware PWM Instance
 RP2040_PWM* motorPWM;
+uint32_t pwmTop = 0;
 
 bool hasZeroed = false;
 
@@ -56,10 +57,11 @@ bool hasZeroed = false;
 void setup() {
     pinMode(LED_BUILTIN, OUTPUT);
     encoder.begin();
-    
+
     // Core 0 Exclusive owner of the PWM
     motorPWM = new RP2040_PWM(SERVO_OUT_PIN, PWM_FREQ, 0);
-    motorPWM->setPWM(SERVO_OUT_PIN, PWM_FREQ, 60.0f); // 1500us neutral at 400Hz (period=2500us)
+    motorPWM->setPWM(); // Initialize hardware
+    pwmTop = motorPWM->get_TOP();
 }
 
 void loop() {
@@ -112,8 +114,10 @@ void loop() {
             }
         }
         
-        float dutyCycle = ((float)finalOut / 2500.0f) * 100.0f;
-        motorPWM->setPWM(SERVO_OUT_PIN, PWM_FREQ, dutyCycle);
+        // Calculate raw level for double-buffered register write
+        // Period at 400Hz is 2500us. rawLevel = (finalOut / 2500) * pwmTop
+        uint16_t rawLevel = (uint16_t)((float)finalOut * (float)pwmTop / 2500.0f);
+        motorPWM->setPWM_manual_Fast(SERVO_OUT_PIN, rawLevel);
         shared_finalOutputUs = finalOut;
     }
 
